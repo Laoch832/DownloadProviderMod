@@ -1,0 +1,9 @@
+<resources>
+    <string name="app_name">DownloadProvider 优化</string>
+    <string name="xposed_description">去除系统下载器广告和推广，集成 Edge 浏览器下载功能 | By RadiAsync</string>
+    
+    <string-array name="xposed_scope">
+        <item>com.android.providers.downloads.ui</item>
+        <item>com.microsoft.emmx</item>
+    </string-array>
+</resources>
