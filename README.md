@@ -85,7 +85,7 @@ apksigner sign --ks debug.keystore --out DownloadProviderMod_vX.X_RadiAsync.apk 
 
 防误伤策略：
 
-- Edge 启动 8 秒内（历史下载恢复期）不拦截
+- `DownloadCollectionBridge.a` 仅在「新建下载」时被 native 调用（历史恢复不经过此路径），因此打开 Edge 后立即下载也能被正常接管
 - 60 秒内同 URL 只入队一次（native 重试仍会继续中止 Edge 下载）
 - 仅接管 `http/https/ftp`；`magnet/ed2k/blob` 由 Edge 原生处理
 - 已转发 URL 持久化记录（`dpm_forwarded.txt`），避免恢复期重复入队

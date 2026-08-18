@@ -29,9 +29,9 @@ import de.robv.android.xposed.callbacks.XC_LoadPackage;
  *   - 懒 hook 兜底 + 一次性清理旧版本误入队的任务
  *
  * 防误伤：
- *   - Edge 启动 8 秒内（历史下载恢复期）不转发、不杀
+ *   - bridge.a 仅在「新建下载」时被 native 调用（历史恢复不经过），无需启动宽限期
  *   - 仅 http/https/ftp 转发（magnet/ed2k/blob 由 Edge 原生处理）
- *   - 60 秒内同一 URL 只转发一次
+ *   - 60 秒内同一 URL 只转发一次（native 重试仍会继续杀 Edge 下载）
  *
  * @author RadiAsync
  * @version 3.0
@@ -43,10 +43,6 @@ public class EdgeIntegration {
     private static final String CLS_SERVICE = "org.chromium.chrome.browser.download.DownloadManagerService";
     private static final String CLS_ITEM = "org.chromium.chrome.browser.download.DownloadItem";
     private static final String CLS_BRIDGE = "org.chromium.components.download.DownloadCollectionBridge";
-
-    /** 模块加载时刻：Edge 启动后短时间内触发的回调多为历史下载恢复 */
-    private static final long sModuleLoadTime = System.currentTimeMillis();
-    private static final long STARTUP_GRACE_MS = 8000L;
 
     /** 同一 URL 60 秒内只转发一次（native 可能重试多次） */
     private static final Map<String, Long> sForwardedAt = new HashMap<>();
@@ -137,11 +133,8 @@ public class EdgeIntegration {
                             }
                         }
                         if (url == null) return; // 非 http 下载（magnet 等）放行
-                        boolean grace = (System.currentTimeMillis() - sModuleLoadTime) < STARTUP_GRACE_MS;
-                        if (grace) {
-                            XposedBridge.log(TAG + ": grace period, let Edge handle: " + url);
-                            return;
-                        }
+                        // 注意：bridge.a 只在「新建下载」时被 native 调用，
+                        // 历史恢复不会经过这里，因此无需启动宽限期。
 
                         // 去重（60s 内同一 URL 只转发一次，但每次都要杀 Edge 下载）
                         synchronized (sForwardedAt) {
